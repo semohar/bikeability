@@ -1,0 +1,501 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Route Builder Schema",
+  "description": "Schema for route planning with GeoJSON FeatureCollection, segments, waypoints, and accidents",
+  "type": "object",
+  "required": ["project", "route_data"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "description": "Top-level project metadata",
+      "required": ["name", "created", "author", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the route project"
+        },
+        "created": {
+          "type": "string",
+          "format": "date",
+          "description": "Creation date in YYYY-MM-DD format"
+        },
+        "author": {
+          "type": "string",
+          "description": "Author or organization name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Version number"
+        }
+      }
+    },
+    "route_data": {
+      "type": "object",
+      "description": "GeoJSON FeatureCollection containing route geometry and points",
+      "required": ["type", "features"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["FeatureCollection"],
+          "description": "Must be FeatureCollection"
+        },
+        "features": {
+          "type": "array",
+          "description": "Array of GeoJSON features",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/MultiLineStringFeature"
+              },
+              {
+                "$ref": "#/definitions/LineStringFeature"
+              },
+              {
+                "$ref": "#/definitions/WaypointFeature"
+              },
+              {
+                "$ref": "#/definitions/AccidentFeature"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "route_stats": {
+      "type": "object",
+      "description": "Statistical summary of the route",
+      "properties": {
+        "total_waypoints": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_turns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "elevation_gain_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "elevation_loss_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["easy", "moderate", "hard", "extreme"]
+        },
+        "has_steep_sections": {
+          "type": "boolean"
+        }
+      }
+    },
+    "weather_data": {
+      "type": "object",
+      "description": "Current weather conditions",
+      "properties": {
+        "weather": {
+          "type": "string"
+        },
+        "chance_of_precip": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "temperature_f": {
+          "type": "number"
+        },
+        "icy_roads": {
+          "type": "string",
+          "enum": ["yes", "no"]
+        }
+      }
+    },
+    "accident_stats": {
+      "type": "object",
+      "description": "Summary of accidents along the route",
+      "properties": {
+        "total_accidents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "date_range": {
+          "type": "string"
+        },
+        "by_severity": {
+          "type": "object",
+          "properties": {
+            "minor": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "moderate": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "major": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "total_injuries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_fatalities": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "high_risk_locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "intersection": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              },
+              "accident_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "segments": {
+      "type": "array",
+      "description": "Detailed information about street segments",
+      "items": {
+        "type": "object",
+        "required": ["name", "line_index", "distance_km"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "line_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "distance_km": {
+            "type": "number",
+            "minimum": 0
+          },
+          "surface": {
+            "type": "string",
+            "enum": ["asphalt", "concrete", "gravel", "dirt", "cobblestone"]
+          },
+          "lanes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "speed_limit_kmh": {
+            "type": "number",
+            "minimum": 0
+          },
+          "bike_lane": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "MultiLineStringFeature": {
+      "type": "object",
+      "description": "Complete route as MultiLineString",
+      "required": ["type", "id", "geometry", "properties"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["Feature"]
+        },
+        "id": {
+          "type": "string"
+        },
+        "geometry": {
+          "type": "object",
+          "required": ["type", "coordinates"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["MultiLineString"]
+            },
+            "coordinates": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 2
+              }
+            }
+          }
+        },
+        "properties": {
+          "type": "object",
+          "properties": {
+            "total_distance_km": {
+              "type": "number",
+              "minimum": 0
+            },
+            "estimated_time_min": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "LineStringFeature": {
+      "type": "object",
+      "description": "Individual road segment",
+      "required": ["type", "id", "geometry", "properties"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["Feature"]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^segment-"
+        },
+        "geometry": {
+          "type": "object",
+          "required": ["type", "coordinates"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["LineString"]
+            },
+            "coordinates": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 3
+              },
+              "minItems": 2
+            }
+          }
+        },
+        "properties": {
+          "type": "object",
+          "required": ["name", "street", "gradient_percent", "gradient_category"],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "street": {
+              "type": "string"
+            },
+            "gradient_percent": {
+              "type": "number"
+            },
+            "gradient_category": {
+              "type": "string",
+              "enum": ["flat", "gentle", "moderate", "steep", "very steep"]
+            },
+            "road_condition": {
+              "type": "string",
+              "enum": ["excellent", "good", "fair", "poor"]
+            },
+            "road_material": {
+              "type": "string",
+              "enum": ["paved", "gravel", "dirt", "cobblestone"]
+            },
+            "safety_level": {
+              "type": "string",
+              "enum": ["safe", "good", "caution", "dangerous"]
+            },
+            "traffic": {
+              "type": "string",
+              "enum": ["none", "light", "moderate", "heavy"]
+            },
+            "distance_km": {
+              "type": "number",
+              "minimum": 0
+            },
+            "color": {
+              "type": "string"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "WaypointFeature": {
+      "type": "object",
+      "description": "Waypoint or instruction point",
+      "required": ["type", "id", "geometry", "properties"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["Feature"]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^waypoint-"
+        },
+        "geometry": {
+          "type": "object",
+          "required": ["type", "coordinates"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["Point"]
+            },
+            "coordinates": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 3
+            }
+          }
+        },
+        "properties": {
+          "type": "object",
+          "required": ["name", "type", "street"],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["start", "turn", "warning", "info", "destination"]
+            },
+            "street": {
+              "type": "string"
+            },
+            "instruction": {
+              "type": "string"
+            },
+            "elevation_m": {
+              "type": "number"
+            },
+            "grade_percent": {
+              "type": "number"
+            },
+            "marker_color": {
+              "type": "string"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "AccidentFeature": {
+      "type": "object",
+      "description": "Accident location with details",
+      "required": ["type", "id", "geometry", "properties"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["Feature"]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^accident-"
+        },
+        "geometry": {
+          "type": "object",
+          "required": ["type", "coordinates"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["Point"]
+            },
+            "coordinates": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 3
+            }
+          }
+        },
+        "properties": {
+          "type": "object",
+          "required": ["name", "type", "date", "severity"],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["accident"]
+            },
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "time": {
+              "type": "string",
+              "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$"
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["minor", "moderate", "major", "fatal"]
+            },
+            "vehicles_involved": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "injuries": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fatalities": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "weather": {
+              "type": "string"
+            },
+            "road_condition": {
+              "type": "string",
+              "enum": ["dry", "wet", "icy", "snowy"]
+            },
+            "cause": {
+              "type": "string"
+            },
+            "marker_color": {
+              "type": "string"
+            },
+            "marker_icon": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,345 @@
+# Top-level project metadata
+project:
+  name: "Morning Commute Route"
+  created: "2024-11-07"
+  author: "Bikeability"
+  version: "1.0"
+
+# GeoJSON FeatureCollection with both lines and points
+route_data:
+  type: FeatureCollection
+  features:
+    # ===== COMPLETE ROUTE (for reference/analysis) =====
+    # This represents the entire route as one logical entity
+    - type: Feature
+      id: route-complete
+      geometry:
+        type: MultiLineString
+        coordinates:
+          - [[-90.5, 38.6], [-90.49, 38.6], [-90.48, 38.6]]
+          - [[-90.48, 38.6], [-90.48, 38.605]]
+          - [[-90.48, 38.605], [-90.48, 38.61], [-90.48, 38.62]]
+          - [[-90.48, 38.62], [-90.47, 38.62]]
+      properties:
+        total_distance_km: 2.5
+        estimated_time_min: 8
+        # This won't be styled by gradient - just shows the full path
+    
+    # ===== INDIVIDUAL SEGMENTS (for gradient-based styling) =====
+    # Each segment is a separate feature so it can be styled independently
+    
+    # Main Street - flat section
+    - type: Feature
+      id: segment-main-street
+      geometry:
+        type: LineString
+        coordinates: [[-90.5, 38.6], [-90.49, 38.6], [-90.48, 38.6]]
+      properties:
+        name: "Main Street"
+        street: "Main Street"
+        gradient_percent: 1
+        gradient_category: "flat"
+        road_condition: "good"
+        road_material: "paved"
+        safety_level: "safe"
+        traffic: "heavy"
+        distance_km: 1.2
+        color: "green"
+        sequence: 1
+    
+    # Elm Avenue - flat section (first half)
+    - type: Feature
+      id: segment-elm-flat
+      geometry:
+        type: LineString
+        coordinates: [[-90.48, 38.6], [-90.48, 38.605]]
+      properties:
+        name: "Elm Avenue (Flat)"
+        street: "Elm Avenue"
+        gradient_percent: 2
+        gradient_category: "flat"
+        road_condition: "good"
+        road_material: "paved"  
+        safety_level: "caution"
+        traffic: "light"      
+        distance_km: 0.4
+        color: "green"
+        sequence: 2
+    
+    # Elm Avenue - steep section (second half)
+    - type: Feature
+      id: segment-elm-steep
+      geometry:
+        type: LineString
+        coordinates: [[-90.48, 38.605], [-90.48, 38.61], [-90.48, 38.62]]
+      properties:
+        name: "Elm Avenue (Steep Hill)"
+        street: "Elm Avenue"
+        gradient_percent: 15
+        gradient_category: "steep"
+        road_condition: "poor"
+        road_material: "paved"
+        safety_level: "caution"   
+        traffic: "moderate"     
+        distance_km: 0.4
+        color: "red"
+        sequence: 3
+    
+    # Oak Road - gentle slope
+    - type: Feature
+      id: segment-oak-road
+      geometry:
+        type: LineString
+        coordinates: [[-90.48, 38.62], [-90.47, 38.62]]
+      properties:
+        name: "Oak Road"
+        street: "Oak Road"
+        gradient_percent: 3
+        gradient_category: "gentle"
+        road_condition: "good"
+        road_material: "gravel"
+        safety_level: "good"  
+        traffic: "none"
+        distance_km: 0.5
+        color: "yellow"
+        sequence: 4
+    
+    # ===== WAYPOINT/INSTRUCTION POINTS =====
+    
+    # Start point
+    - type: Feature
+      id: waypoint-start
+      geometry:
+        type: Point
+        coordinates: [-90.5, 38.6]
+      properties:
+        name: "Home"
+        type: "start"
+        street: "Main Street"
+        instruction: "Head east on Main Street"
+        elevation_m: 100
+        marker_color: "green"
+        sequence: 1
+    
+    # Turn 1
+    - type: Feature
+      id: waypoint-turn1
+      geometry:
+        type: Point
+        coordinates: [-90.48, 38.6]
+      properties:
+        name: "Main & Elm Intersection"
+        type: "turn"
+        street: "Elm Avenue"
+        instruction: "Turn left onto Elm Avenue"
+        elevation_m: 105
+        marker_color: "blue"
+        sequence: 2
+    
+    # Elevation change warning
+    - type: Feature
+      id: waypoint-hill
+      geometry:
+        type: Point
+        coordinates: [-90.48, 38.605]
+      properties:
+        name: "Steep Hill Begins"
+        type: "warning"
+        street: "Elm Avenue"
+        instruction: "Caution: Steep 15% grade ahead"
+        elevation_m: 110
+        grade_percent: 15
+        marker_color: "orange"
+        sequence: 3
+    
+    # Top of hill
+    - type: Feature
+      id: waypoint-hill-top
+      geometry:
+        type: Point
+        coordinates: [-90.48, 38.61]
+      properties:
+        name: "Hill Summit"
+        type: "info"
+        street: "Elm Avenue"
+        instruction: "Crest of hill - proceed with caution"
+        elevation_m: 150
+        marker_color: "yellow"
+        sequence: 4
+    
+    # Turn 2
+    - type: Feature
+      id: waypoint-turn2
+      geometry:
+        type: Point
+        coordinates: [-90.48, 38.62]
+      properties:
+        name: "Elm & Oak Intersection"
+        type: "turn"
+        street: "Oak Road"
+        instruction: "Turn right onto Oak Road"
+        elevation_m: 155
+        marker_color: "blue"
+        sequence: 5
+    
+    # Destination
+    - type: Feature
+      id: waypoint-end
+      geometry:
+        type: Point
+        coordinates: [-90.47, 38.62]
+      properties:
+        name: "Work"
+        type: "destination"
+        street: "Oak Road"
+        instruction: "Arrive at destination on right"
+        elevation_m: 160
+        marker_color: "red"
+        sequence: 6
+    
+    # ===== ACCIDENT LOCATIONS =====
+    
+    # Accident 1 - Main & Elm intersection
+    - type: Feature
+      id: accident-001
+      geometry:
+        type: Point
+        coordinates: [-90.48, 38.6]
+      properties:
+        name: "Accident at Main & Elm"
+        type: "accident"
+        date: "2024-10-15"
+        time: "08:30"
+        severity: "minor"
+        vehicles_involved: 2
+        injuries: 0
+        fatalities: 0
+        weather: "clear"
+        road_condition: "dry"
+        cause: "failure to yield"
+        marker_color: "orange"
+        marker_icon: "warning"
+    
+    # Accident 2 - Steep hill on Elm
+    - type: Feature
+      id: accident-002
+      geometry:
+        type: Point
+        coordinates: [-90.48, 38.608]
+      properties:
+        name: "Accident on Elm Hill"
+        type: "accident"
+        date: "2024-09-22"
+        time: "16:45"
+        severity: "moderate"
+        vehicles_involved: 1
+        injuries: 1
+        fatalities: 0
+        weather: "rain"
+        road_condition: "wet"
+        cause: "loss of control on steep grade"
+        marker_color: "red"
+        marker_icon: "warning"
+    
+    # Accident 3 - Elm & Oak intersection
+    - type: Feature
+      id: accident-003
+      geometry:
+        type: Point
+        coordinates: [-90.48, 38.62]
+      properties:
+        name: "Accident at Elm & Oak"
+        type: "accident"
+        date: "2024-08-03"
+        time: "12:15"
+        severity: "major"
+        vehicles_involved: 3
+        injuries: 2
+        fatalities: 0
+        weather: "clear"
+        road_condition: "dry"
+        cause: "ran red light"
+        marker_color: "darkred"
+        marker_icon: "warning"
+    
+    # Accident 4 - Main Street
+    - type: Feature
+      id: accident-004
+      geometry:
+        type: Point
+        coordinates: [-90.49, 38.6]
+      properties:
+        name: "Minor Accident on Main"
+        type: "accident"
+        date: "2024-11-01"
+        time: "07:20"
+        severity: "minor"
+        vehicles_involved: 2
+        injuries: 0
+        fatalities: 0
+        weather: "fog"
+        road_condition: "dry"
+        cause: "rear-end collision"
+        marker_color: "orange"
+        marker_icon: "warning"
+
+# Additional route metadata
+route_stats:
+  total_waypoints: 6
+  total_turns: 2
+  elevation_gain_m: 60
+  elevation_loss_m: 0
+  difficulty: "moderate"
+  has_steep_sections: true
+
+weather_data:
+  weather: "overcast"
+  chance_of_precip: 60
+  temperature_f: 72
+  icy_roads: "no"
+
+# Accident statistics
+accident_stats:
+  total_accidents: 4
+  date_range: "2024-08-03 to 2024-11-01"
+  by_severity:
+    minor: 2
+    moderate: 1
+    major: 1
+  total_injuries: 3
+  total_fatalities: 0
+  high_risk_locations:
+    - intersection: "Main & Elm"
+      accident_count: 1
+    - intersection: "Elm & Oak"
+      accident_count: 1
+    - location: "Elm Avenue Hill"
+      accident_count: 1
+      note: "Steep grade - wet conditions hazardous"
+
+# Details for full streets
+segments:
+  - name: "Main Street"
+    line_index: 0
+    distance_km: 1.2
+    surface: "asphalt"
+    lanes: 2
+    speed_limit_kmh: 50
+    bike_lane: true
+    
+  - name: "Elm Avenue"
+    line_index: 1
+    distance_km: 0.8
+    surface: "asphalt"
+    lanes: 2
+    speed_limit_kmh: 40
+    bike_lane: false
+    notes: "Steep hill - 15% grade midway"
+    
+  - name: "Oak Road"
+    line_index: 2
+    distance_km: 0.5
+    surface: "asphalt"
+    lanes: 2
+    speed_limit_kmh: 45
+    bike_lane: true
