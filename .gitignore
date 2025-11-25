@@ -1,3 +1,4 @@
 *.osm.pbf
+*.osm
 *.kmz
 *.DS_Store
