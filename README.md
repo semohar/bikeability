@@ -1,4 +1,4 @@
-A personal data integration and routing project to ingest and transform publically available data (traffic levels, road conditions, weather, accident history, etc) to generate an optimal biking path.
+A personal data integration and routing project to ingest and transform publically available data (traffic levels, road conditions, weather, accident history, etc) to generate an optimal biking path and serve the result via web application.
 
 # Project Progress Log
 
@@ -80,10 +80,22 @@ A personal data integration and routing project to ingest and transform publical
 
 #### Work
 - Spun up a simple web framework for serving routes using Mapbox GL JS
-- Created backend server using Flask and Python
+- Created backend server using Flask and Python (via venv)
 - Created basic frontend webpage using HTML
 
 #### To Do
+- Consider using Node.js for service (Scala/Python/Rust for data processing?)
 - Create customize heuristic(s) to include in server
-- Create a dockerfile to formally save custom image + database setup
+- Create a Dockerfile to formally save custom image + database setup
 - Consider production architecture
+
+---
+
+### 12.2.25
+
+#### Work
+- Created Dockerfile with dependencies (made tightly coupled to STL data for now)
+  - Flow: docker-compose, then /import-data.sh (need database to restart first - see notes)
+
+#### To Do
+- Should eventually build arm64 psgrouting image (consider workflow for regular updates)
