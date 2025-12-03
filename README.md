@@ -96,6 +96,10 @@ A personal data integration and routing project to ingest and transform publical
 #### Work
 - Created Dockerfile with dependencies (made tightly coupled to STL data for now)
   - Flow: docker-compose, then /import-data.sh (need database to restart first - see notes)
+- Debugged accidental async `docker exec` calls in `import-data.sh` (sol: -i)
+- Debugged bad pgr_dijkstra call (sol: cast req to ints; were being parsed as strings)
 
 #### To Do
-- Should eventually build arm64 psgrouting image (consider workflow for regular updates)
+- (LP) Should eventually build arm64 psgrouting image (consider workflow for regular updates)
+- Consider moving FE over to React for a full-stack product
+- Next: LiDAR, or tweak routing algo?
