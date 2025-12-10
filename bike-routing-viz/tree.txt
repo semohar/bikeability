@@ -1,0 +1,53 @@
+.
+├── backend
+│   ├── Dockerfile
+│   ├── package-lock.json
+│   ├── package.json
+│   └── server.js
+├── database
+│   ├── data
+│   │   ├── mapconfig_bicycle.xml
+│   │   ├── saint-louis-city-county.osm
+│   │   └── st_louis_elevation.tif
+│   ├── Dockerfile
+│   ├── import-data.sh
+│   ├── init-scripts
+│   │   └── 01-create-extensions.sql
+│   └── nginx.conf
+├── docker-compose.prod.yml
+├── docker-compose.yml
+├── frontend
+│   ├── Dockerfile
+│   ├── Dockerfile.dev
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── nginx.conf
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   └── vite.svg
+│   ├── README.md
+│   ├── src
+│   │   ├── App.tsx
+│   │   ├── components
+│   │   │   ├── Controls.tsx
+│   │   │   ├── Map.tsx
+│   │   │   └── RouteInfo.tsx
+│   │   ├── hooks
+│   │   │   └── useRoute.ts
+│   │   ├── main.tsx
+│   │   ├── services
+│   │   │   └── api.ts
+│   │   ├── types
+│   │   │   ├── api.types.ts
+│   │   │   └── map.types.ts
+│   │   └── vite-env.d.ts
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
+├── package-lock.json
+├── package.json
+└── tree.txt
+
+12 directories, 39 files

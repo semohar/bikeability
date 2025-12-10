@@ -4,6 +4,20 @@ Database: PostGIS
 Backend: Node.js + Express
 Frontend: React
 
+To run:
+
+```
+docker-compose up -d --build
+```
+
+To quit:
+
+```
+docker-compose down -v
+```
+
+Local: http://localhost:5173
+
 # Project Progress Log
 
 ### 11.7.25
