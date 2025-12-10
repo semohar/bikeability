@@ -1,0 +1,108 @@
+# =============================================================================
+# DEVELOPMENT DOCKERFILE - Single-stage build with hot reload
+# =============================================================================
+# Purpose: Runs Vite dev server with instant hot module replacement (HMR)
+# Result: ~500MB image with full dev environment
+# Usage: docker-compose up -d frontend-dev
+# =============================================================================
+
+# Use Node.js Alpine for smaller image size
+# Alpine: Minimal Linux distro (~5MB vs ~100MB for full Node image)
+FROM node:20-alpine
+
+# Set working directory inside container
+WORKDIR /app
+
+# Copy package files first (for Docker layer caching)
+# If package.json doesn't change, npm install is skipped on rebuilds
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies)
+# npm install (not npm ci): Works without package-lock.json if needed
+# Includes: TypeScript, Vite, ESLint, testing tools, etc.
+RUN npm install
+
+# Copy all source code
+# Note: In docker-compose.yml, we mount ./frontend:/app as a volume
+# This means changes to local files appear instantly in the container
+# The COPY here is only for building the image initially
+COPY . .
+
+# Expose Vite dev server port
+# Vite default: 5173
+EXPOSE 5173
+
+# Start Vite development server
+# npm run dev: Starts Vite with hot module replacement
+# --: Separator to pass flags to underlying command (npm -> vite)
+# --host: Makes Vite listen on 0.0.0.0 instead of 127.0.0.1
+#         Required for Docker - allows connections from outside container
+#         Without this, you can't access http://localhost:5173 from browser
+CMD ["npm", "run", "dev", "--", "--host"]
+
+# -----------------------------------------------------------------------------
+# Key differences from production Dockerfile:
+# -----------------------------------------------------------------------------
+# 1. Single-stage (no builder + nginx split)
+# 2. npm install (all deps) vs npm ci (prod only)
+# 3. No build step - serves source files directly
+# 4. Runs Vite dev server (port 5173) vs Nginx (port 80)
+# 5. Larger image (~500MB) vs small (~20MB)
+# 6. Source code included vs only built files
+# 
+# Hot Module Replacement (HMR):
+#   Edit src/App.tsx → Vite detects change → Updates browser instantly
+#   No page reload needed, state is preserved
+# 
+# Why --host flag is critical:
+#   Without --host:
+#     Vite listens on 127.0.0.1 (localhost inside container)
+#     Browser on host machine can't connect ❌
+#   With --host:
+#     Vite listens on 0.0.0.0 (all network interfaces)
+#     Browser on host machine can connect via port mapping ✅
+# 
+# Volume mounting (in docker-compose.yml):
+#   volumes:
+#     - ./frontend:/app          ← Local code synced to container
+#     - /app/node_modules        ← Preserve container's node_modules
+#   
+#   This means:
+#     - Changes to local files appear instantly in container
+#     - HMR works across Docker boundary
+#     - No need to rebuild image for code changes
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Development workflow:
+# -----------------------------------------------------------------------------
+# 1. docker-compose up -d frontend-dev
+#    → Starts container with Vite dev server
+# 
+# 2. Edit src/components/Map.tsx on your local machine
+#    → File change detected by Vite inside container
+#    → HMR updates browser at http://localhost:5173
+# 
+# 3. Check logs: docker-compose logs -f frontend-dev
+#    → See Vite output, errors, warnings
+# 
+# 4. Install new package:
+#    docker-compose exec frontend-dev npm install axios
+#    → Installs in container's node_modules
+# 
+# 5. Stop: docker-compose down
+#    → Container stops, but local code remains unchanged
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Performance note:
+# -----------------------------------------------------------------------------
+# Running dev server locally (without Docker) is faster:
+#   cd frontend && npm run dev
+# 
+# But Dockerfile.dev is useful for:
+#   ✅ Consistent environment across team
+#   ✅ Testing container networking
+#   ✅ Matching production setup closely
+#   ✅ Avoiding "works on my machine" issues
+# -----------------------------------------------------------------------------

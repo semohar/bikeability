@@ -18,9 +18,9 @@ done
 echo -e "${GREEN}✓ PostgreSQL is ready!${NC}"
 
 echo -e "${YELLOW}Step 2: Copying data files into container...${NC}"
-docker cp database/data/saint-louis-city-county.osm bike-routing-db:/tmp/
-docker cp database/data/st_louis_elevation.tif bike-routing-db:/tmp/
-docker cp database/data/mapconfig_bicycle.xml bike-routing-db:/tmp/
+docker cp data/saint-louis-city-county.osm bike-routing-db:/tmp/
+docker cp data/st_louis_elevation.tif bike-routing-db:/tmp/
+docker cp data/mapconfig_bicycle.xml bike-routing-db:/tmp/
 echo -e "${GREEN}✓ Files copied${NC}"
 
 echo -e "${YELLOW}Step 3: Running osm2pgrouting (this takes 2-5 minutes)...${NC}"

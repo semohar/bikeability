@@ -1,5 +1,9 @@
 A personal data integration and routing project to ingest and transform publically available data (traffic levels, road conditions, weather, accident history, etc) to generate an optimal biking path and serve the result via web application.
 
+Database: PostGIS
+Backend: Node.js + Express
+Frontend: React
+
 # Project Progress Log
 
 ### 11.7.25
@@ -72,7 +76,7 @@ A personal data integration and routing project to ingest and transform publical
 #### Work
 - Got elevation data from USGS National Elevation Dataset (NED) / 3DEP
 - Imported raster into PostGIS using raster2pgsql
-- Design decision: (re: elevation table) while keeping everything in one table results in faster query times, the same data will be stored multiple places + the system will have many data sources)
+- Design decision: (re: elevation table) while keeping everything in one table results in faster query times, the same data will be stored multiple places + the system will have many data sources
 
 ---
 
@@ -103,3 +107,12 @@ A personal data integration and routing project to ingest and transform publical
 - (LP) Should eventually build arm64 psgrouting image (consider workflow for regular updates)
 - Consider moving FE over to React for a full-stack product
 - Next: LiDAR, or tweak routing algo?
+
+---
+
+### 12.10.25
+
+#### Work
+- Decided on using modular design with serperated BE + FE (rather than using something like Next.js for fullstack). Better for future potential "serverless" design, and good for learning
+
+#### To Do

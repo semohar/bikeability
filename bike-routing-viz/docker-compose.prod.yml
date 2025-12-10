@@ -1,0 +1,55 @@
+services:
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: bike-routing-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bike_routing
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    shm_size: 256mb  # Increase shared memory for better performance
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bike-routing-api
+    environment:
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: bike_routing
+      DB_USER: postgres
+      DB_PASSWORD: password
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bike-routing-frontend
+    ports:
+      - "80:80"  # Standard HTTP port for production
+    environment:
+      - VITE_API_URL=/api # Relative URL! Proxied through Nginx
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
