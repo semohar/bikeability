@@ -1,65 +1,23 @@
 #!/bin/bash
 set -e
 
-echo "=========================================="
-echo "Starting data import process"
-echo "=========================================="
-
-# Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+RED='\033[0;31m'
+NC='\033[0m'
 
-echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${NC}"
-until docker exec bike-routing-db pg_isready -U postgres > /dev/null 2>&1; do
-  echo "Waiting for database..."
-  sleep 2
-done
-echo -e "${GREEN}✓ PostgreSQL is ready!${NC}"
+# Clean up existing elevation data
+echo -e "${YELLOW}Cleaning up existing elevation tables...${NC}"
+docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
+    DROP TABLE IF EXISTS elevation CASCADE;
+    DROP TABLE IF EXISTS vertex_elevation CASCADE;
+    DROP TABLE IF EXISTS segment_elevation CASCADE;
+EOSQL
+echo -e "${GREEN}✓ Cleanup complete${NC}"
 
-echo -e "${YELLOW}Copying data files into container...${NC}"
-docker cp data/saint-louis-city-county.osm bike-routing-db:/tmp/
+echo -e "${YELLOW}Copying elevation data into container...${NC}"
 docker cp data/st_louis_elevation.tif bike-routing-db:/tmp/
-docker cp data/mapconfig_bicycle.xml bike-routing-db:/tmp/
-echo -e "${GREEN}✓ Files copied${NC}"
-
-echo -e "${YELLOW}Running osm2pgrouting (this takes 2-5 minutes)...${NC}"
-docker exec bike-routing-db osm2pgrouting \
-  --f /tmp/saint-louis-city-county.osm \
-  --conf /tmp/mapconfig_bicycle.xml \
-  --dbname bike_routing \
-  --username postgres \
-  --host localhost \
-  --clean
-
-echo -e "${GREEN}✓ OSM data imported${NC}"
-
-echo -e "${YELLOW}Indexing ways(source) and ways(target)...${NC}"
-docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
-    CREATE INDEX IF NOT EXISTS idx_ways_source ON ways(source);
-    CREATE INDEX IF NOT EXISTS idx_ways_target ON ways(target);
-EOSQL
-
-echo -e "${GREEN}✓ Indexing complete${NC}"
-
-echo -e "${YELLOW}Calculating vertex connectivity...${NC}"
-docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
-    UPDATE ways_vertices_pgr v
-    SET cnt = (
-        SELECT COUNT(*)
-        FROM ways w
-        WHERE w.source = v.id OR w.target = v.id
-    );
-EOSQL
-
-echo -e "${GREEN}✓ Connectivity calculated${NC}"
-
-echo -e "${YELLOW}Indexing ways_vertices_pgr(cnt)...${NC}"
-docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
-    CREATE INDEX IF NOT EXISTS idx_vertices_cnt ON ways_vertices_pgr(cnt);
-EOSQL
-
-echo -e "${GREEN}✓ Indexing complete${NC}"
+echo -e "${GREEN}✓ File copied${NC}"
 
 echo -e "${YELLOW}Importing elevation raster (this takes 2-5 minutes)...${NC}"
 docker exec bike-routing-db bash -c "
@@ -144,43 +102,7 @@ EOSQL
 
 echo -e "${GREEN}✓ Segment grades calculated${NC}"
 
-echo -e "${YELLOW} Adding crash data...${NC}"
-docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
-    CREATE TABLE crash_incidents (
-    id SERIAL PRIMARY KEY,
-    map VARCHAR(50),
-    rpt_no VARCHAR(50),
-    weekday VARCHAR(10),
-    incident_date DATE,
-    incident_time TIME,
-    veh_count INTEGER,
-    agency VARCHAR(100),
-    troop VARCHAR(10),
-    county VARCHAR(50),
-    city VARCHAR(50),
-    crash_type VARCHAR(50),
-    severity VARCHAR(50),
-    at_street VARCHAR(200),
-    on_street VARCHAR(200),
-    light_cond VARCHAR(50),
-    injured INTEGER,
-    killed INTEGER,
-    location GEOMETRY(Point, 4326),
-    geocode_confidence VARCHAR(20),
-    geocoded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-EOSQL
-
-echo -e "${GREEN}✓ Crash data added${NC}"
-
-echo -e "${YELLOW}Indexing idx_crash_location on crash_incidents...${NC}"
-docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
-    CREATE INDEX idx_crash_location ON crash_incidents USING GIST(location);
-EOSQL
-
-echo -e "${GREEN}✓ idx_crash_location indexed${NC}"
-
-echo -e "${YELLOW}Gathering statistics...${NC}"
+echo -e "${YELLOW}Gathering elevation statistics...${NC}"
 docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
     SELECT 
         'Vertices with elevation: ' || COUNT(*) as stat
@@ -207,13 +129,4 @@ docker exec -i bike-routing-db psql -U postgres -d bike_routing <<-EOSQL
     FROM segment_elevation;
 EOSQL
 
-echo ""
-echo -e "${GREEN}=========================================="
-echo -e "✓ DATA IMPORT COMPLETE!"
-echo -e "==========================================${NC}"
-echo ""
-echo "You can now access:"
-echo "  - Frontend: http://localhost:8000"
-echo "  - API: http://localhost:3000"
-echo "  - Database: localhost:5432"
-echo ""
+echo -e "${GREEN}✓ Elevation setup complete${NC}"

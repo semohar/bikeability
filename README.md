@@ -1,8 +1,12 @@
 A personal data integration and routing project to ingest and transform publically available data (traffic levels, road conditions, weather, accident history, etc) to generate an optimal biking path and serve the result via web application.
 
-Database: PostGIS
-Backend: Node.js + Express
-Frontend: React
+**Database:** PostGIS
+
+**Backend**: Node.js + Express
+
+**Frontend**: React
+
+---
 
 To run:
 
@@ -17,6 +21,8 @@ docker-compose down -v
 ```
 
 Local: http://localhost:5173
+
+---
 
 # Project Progress Log
 
@@ -129,4 +135,14 @@ Local: http://localhost:5173
 #### Work
 - Decided on using modular design with serperated BE + FE (rather than using something like Next.js for fullstack). Better for future potential "serverless" design, and good for learning
 
+---
+
+### 12.15.25
+
+#### Work
+- Added pedestrian accident data
+- Modularized data import to PostGIS into separate scripts
+
 #### To Do
+- Uhhh get those tokens outta there!!
+- Could clean crash data (unneeded columns)

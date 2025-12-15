@@ -71,8 +71,12 @@ app.get('/api/route', async (req, res) => {
         
         console.log(`Route request: start=${startNode}, end=${endNode}, type=${type}`);
         
+        // Cost formula: length, priority, elevation, crash
         const costFormula = type === 'safest' 
-            ? '(w.length_m * c.priority * (1 + COALESCE(CASE WHEN se.grade_percent > 0 THEN se.grade_percent * 0.3 ELSE 0 END, 0)))'
+            ? `(w.length_m * c.priority * 
+                (1 + COALESCE(CASE WHEN se.grade_percent > 0 THEN se.grade_percent * 0.3 ELSE 0 END, 0)) *
+                (1 + COALESCE(crash_stats.crash_count * 0.2, 0))
+               )`
             : 'w.length_m';
         
         const result = await pool.query(`
@@ -85,11 +89,33 @@ app.get('/api/route', async (req, res) => {
                         ${costFormula}::float8 as cost
                      FROM ways w
                      JOIN configuration c ON w.tag_id = c.tag_id
-                     LEFT JOIN segment_elevation se ON w.gid = se.segment_id',
+                     LEFT JOIN segment_elevation se ON w.gid = se.segment_id
+                     LEFT JOIN (
+                         SELECT 
+                             csp.segment_id,
+                             COUNT(*) as crash_count,
+                             SUM(CASE WHEN ci.severity = ''Fatal'' THEN 3
+                                      WHEN ci.severity = ''Serious Injury'' THEN 2
+                                      ELSE 1 END) as severity_score
+                         FROM crash_segment_proximity csp
+                         JOIN crash_incidents ci ON csp.crash_id = ci.id
+                         GROUP BY csp.segment_id
+                     ) crash_stats ON w.gid = crash_stats.segment_id',
                     ${startNode}::bigint,
                     ${endNode}::bigint,
                     false
                 )
+            ),
+            route_crashes AS (
+                SELECT 
+                    ci.*,
+                    csp.segment_id,
+                    csp.distance_m,
+                    r.seq
+                FROM route r
+                JOIN crash_segment_proximity csp ON r.edge = csp.segment_id
+                JOIN crash_incidents ci ON csp.crash_id = ci.id
+                WHERE r.edge IS NOT NULL
             )
             SELECT 
                 json_build_object(
@@ -105,10 +131,33 @@ app.get('/api/route', async (req, res) => {
                                     'grade_percent', ROUND(COALESCE(se.grade_percent, 0)::numeric, 2),
                                     'elevation_change_m', ROUND(COALESCE(se.elevation_change_m, 0)::numeric, 2),
                                     'road_type', COALESCE(c.tag_value, 'unknown'),
+                                    'crash_count', COALESCE(crash_stats.crash_count, 0),
+                                    'crash_severity_score', COALESCE(crash_stats.severity_score, 0),
                                     'seq', r.seq
                                 )
                             )
                         ) FILTER (WHERE r.edge IS NOT NULL AND w.the_geom IS NOT NULL),
+                        '[]'::json
+                    ),
+                    'crashes', COALESCE(
+                        (SELECT json_agg(
+                            json_build_object(
+                                'type', 'Feature',
+                                'geometry', ST_AsGeoJSON(location)::json,
+                                'properties', json_build_object(
+                                    'id', id,
+                                    'date', incident_date,
+                                    'time', incident_time,
+                                    'severity', severity,
+                                    'injured', injured,
+                                    'killed', killed,
+                                    'on_street', on_street,
+                                    'at_street', at_street,
+                                    'distance_from_route_m', ROUND(distance_m::numeric, 2),
+                                    'route_segment', seq
+                                )
+                            )
+                        ) FROM route_crashes),
                         '[]'::json
                     )
                 ) as geojson
@@ -116,11 +165,23 @@ app.get('/api/route', async (req, res) => {
             LEFT JOIN ways w ON r.edge = w.gid
             LEFT JOIN configuration c ON w.tag_id = c.tag_id
             LEFT JOIN segment_elevation se ON w.gid = se.segment_id
+            LEFT JOIN (
+                SELECT 
+                    csp.segment_id,
+                    COUNT(*) as crash_count,
+                    SUM(CASE WHEN ci.severity = 'Fatal' THEN 3
+                             WHEN ci.severity = 'Serious Injury' THEN 2
+                             ELSE 1 END) as severity_score
+                FROM crash_segment_proximity csp
+                JOIN crash_incidents ci ON csp.crash_id = ci.id
+                GROUP BY csp.segment_id
+            ) crash_stats ON w.gid = crash_stats.segment_id
             WHERE r.edge IS NOT NULL AND w.gid IS NOT NULL;
         `);
         
         if (result.rows[0] && result.rows[0].geojson && result.rows[0].geojson.features && result.rows[0].geojson.features.length > 0) {
-            console.log(`✓ Route found with ${result.rows[0].geojson.features.length} segments`);
+            const crashCount = result.rows[0].geojson.crashes ? result.rows[0].geojson.crashes.length : 0;
+            console.log(`✓ Route found with ${result.rows[0].geojson.features.length} segments and ${crashCount} crashes`);
             res.json(result.rows[0].geojson);
         } else {
             console.log('✗ No route found');
